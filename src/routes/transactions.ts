@@ -1,0 +1,98 @@
+import express from "express";
+import { api } from "../../convex/_generated/api";
+import { ConvexHttpClient } from "convex/browser";
+import { getAuth, clerkClient, requireAuth } from "@clerk/express";
+import { z } from "zod";
+import {
+  addTransactionForm,
+  TransactionDetailed,
+} from "../schemas/TransactionSchema";
+const router = express.Router();
+
+const getConvexClient = () => {
+  if (!process.env.CONVEX_URL) {
+    throw new Error("Convex URL is missing");
+  }
+  console.log(process.env.CONVEX_URL);
+  return new ConvexHttpClient(process.env.CONVEX_URL);
+};
+
+router.get("/", async (req, res) => {
+  try {
+    console.log("This endpoint is working:");
+    const convex = getConvexClient();
+    const { userId } = getAuth(req);
+
+    console.log("Where are now at this point");
+
+    console.log(userId);
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { month, year } = req.query;
+    const currentDate = new Date();
+
+    const currentMonth = currentDate.getMonth() + 1;
+
+    const currentYear = currentDate.getFullYear();
+    const finalMonth = month ? parseInt(month as string) : currentMonth;
+    const finalYear = year ? parseInt(year as string) : currentYear;
+
+    console.log(req.originalUrl);
+
+    const transactions = await convex.query(
+      api.transactionsFuncs.getTransactions,
+      {
+        AuthId: userId,
+        month: finalMonth,
+        year: finalYear,
+      }
+    );
+
+    const result = z.array(TransactionDetailed).safeParse(transactions);
+
+    if (!result.success) {
+      res.json({ error: "Data is not valid" });
+    }
+
+    res.json({ data: result });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+router.post("/", async (req, res) => {
+  try {
+    const convex = getConvexClient();
+
+    const { userId } = getAuth(req);
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    console.log(req.body);
+
+    const jsonResult = addTransactionForm.safeParse(req.body);
+
+    if (!jsonResult.success) {
+      return res.json({ error: "Data is not valid" });
+    }
+
+    const tranasctionAdded = await convex.mutation(
+      api.transactionsFuncs.addTransaction,
+      { ...jsonResult.data, AuthId: userId }
+    );
+
+    console.log(tranasctionAdded);
+
+    return res
+      .status(200)
+      .json({ message: "Transaction was added successfully" });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+export default router;
