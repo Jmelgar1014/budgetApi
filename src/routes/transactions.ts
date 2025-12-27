@@ -2,6 +2,7 @@ import express from "express";
 import { api } from "../../convex/_generated/api";
 import { ConvexHttpClient } from "convex/browser";
 import { getAuth, clerkClient, requireAuth } from "@clerk/express";
+import { rateLimit } from "../rateLimit";
 import { z } from "zod";
 import {
   addTransactionForm,
@@ -30,6 +31,17 @@ router.get("/", async (req, res) => {
 
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { success, limit, remaining } = await rateLimit.limit(userId);
+
+    if (!success) {
+      return res.status(400).json({
+        error: "Rate Limit Exceeded",
+        limit: limit,
+        remaining: remaining,
+        reset: new Date(Date.now() + 60000),
+      });
     }
 
     const { month, year } = req.query;
@@ -72,12 +84,23 @@ router.post("/", async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
+    const { success, limit, remaining } = await rateLimit.limit(userId);
+
+    if (!success) {
+      return res.status(429).json({
+        error: "Rate Limit Exceeded",
+        limit: limit,
+        remaining: remaining,
+        reset: new Date(Date.now() + 60000),
+      });
+    }
+
     console.log(req.body);
 
     const jsonResult = addTransactionForm.safeParse(req.body);
 
     if (!jsonResult.success) {
-      return res.json({ error: "Data is not valid" });
+      return res.status(400).json({ error: "Data is not valid" });
     }
 
     const tranasctionAdded = await convex.mutation(
@@ -103,6 +126,17 @@ router.get("/filters", async (req, res) => {
 
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { success, limit, remaining } = await rateLimit.limit(userId);
+
+    if (!success) {
+      return res.status(400).json({
+        error: "Rate Limit Exceeded",
+        limit: limit,
+        remaining: remaining,
+        reset: new Date(Date.now() + 600000),
+      });
     }
 
     const { text, category, month, year } = req.query;
