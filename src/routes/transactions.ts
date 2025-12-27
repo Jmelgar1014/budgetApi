@@ -7,6 +7,7 @@ import {
   addTransactionForm,
   TransactionDetailed,
 } from "../schemas/TransactionSchema";
+import { Id } from "../../convex/_generated/dataModel";
 const router = express.Router();
 
 const getConvexClient = () => {
@@ -16,11 +17,11 @@ const getConvexClient = () => {
   console.log(process.env.CONVEX_URL);
   return new ConvexHttpClient(process.env.CONVEX_URL);
 };
+const convex = getConvexClient();
 
 router.get("/", async (req, res) => {
   try {
     console.log("This endpoint is working:");
-    const convex = getConvexClient();
     const { userId } = getAuth(req);
 
     console.log("Where are now at this point");
@@ -54,19 +55,18 @@ router.get("/", async (req, res) => {
     const result = z.array(TransactionDetailed).safeParse(transactions);
 
     if (!result.success) {
-      res.json({ error: "Data is not valid" });
+      return res.json({ error: "Data is not valid" });
     }
 
-    res.json({ data: result });
+    return res.json({ data: result.data });
   } catch (error) {
     console.log(error);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 router.post("/", async (req, res) => {
   try {
-    const convex = getConvexClient();
-
     const { userId } = getAuth(req);
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -92,6 +92,46 @@ router.post("/", async (req, res) => {
       .json({ message: "Transaction was added successfully" });
   } catch (error) {
     console.log(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.get("/filters", async (req, res) => {
+  try {
+    console.log("This is the transactions/filters endpoint");
+    const { userId } = getAuth(req);
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { text, category, month, year } = req.query;
+
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth() + 1;
+    const currentYear = currentDate.getFullYear();
+
+    const textValue = text ? text : "";
+    const categoryValue = category ? category : "";
+    const finalMonth = month ? parseInt(month as string) : currentMonth;
+    const finalYear = year ? parseInt(year as string) : currentYear;
+
+    const filteredResults = await convex.query(
+      api.transactionsFuncs.getTransactionPerParams,
+      {
+        AuthId: userId as Id<"transactions">,
+        Category: categoryValue as string,
+        InputValue: textValue as string,
+        Month: finalMonth,
+        Year: finalYear,
+      }
+    );
+
+    return res.status(200).json({ data: filteredResults });
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({ error: "Data is invalid or it is empty" });
   }
 });
 
