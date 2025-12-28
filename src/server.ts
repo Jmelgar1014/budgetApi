@@ -1,10 +1,11 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
-import dotenv from "dotenv";
+import "dotenv/config";
+// import dotenv from "dotenv";
+// dotenv.config();
 import transactionRoutes from "./routes/transactions";
-import { clerkMiddleware } from "@clerk/express";
-dotenv.config();
 
+import { clerkMiddleware } from "@clerk/express";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -20,4 +21,7 @@ app.get("/", (_req: Request, res: Response) => {
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+
+  console.log(process.env.UPSTASH_REDIS_REST_TOKEN);
+  console.log(process.env.UPSTASH_REDIS_REST_URL);
 });
