@@ -6,12 +6,14 @@ import "dotenv/config";
 import transactionRoutes from "./routes/transactions";
 
 import { clerkMiddleware } from "@clerk/express";
+import { useRateLimit } from "./rateLimit";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(cors());
 app.use(clerkMiddleware());
+app.use("/api", useRateLimit);
 
 app.use("/api/transactions", transactionRoutes);
 

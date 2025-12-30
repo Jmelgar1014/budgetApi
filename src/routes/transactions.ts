@@ -27,10 +27,10 @@ router.get("/", async (req, res) => {
     console.log("This endpoint is working:");
     const { userId } = getAuth(req);
 
-    logger.info("Get request received", { userId: userId });
+    // logger.info("Get request received", { userId: userId });
     console.log("Where are now at this point");
 
-    console.log(userId);
+    // console.log(userId);
 
     if (!userId) {
       logger.info("User is not authorized", { userId: userId });
@@ -39,16 +39,16 @@ router.get("/", async (req, res) => {
 
     const rateLimits = rateLimit();
 
-    const { success, limit, remaining } = await rateLimits.limit(userId);
+    // const { success, limit, remaining } = await rateLimits.limit(userId);
 
-    if (!success) {
-      return res.status(429).json({
-        error: "Rate Limit Exceeded",
-        limit: limit,
-        remaining: remaining,
-        reset: new Date(Date.now() + 60000),
-      });
-    }
+    // if (!success) {
+    //   return res.status(429).json({
+    //     error: "Rate Limit Exceeded",
+    //     limit: limit,
+    //     remaining: remaining,
+    //     reset: new Date(Date.now() + 60000),
+    //   });
+    // }
 
     const { month, year } = req.query;
     const currentDate = new Date();
@@ -99,19 +99,19 @@ router.post("/", async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const rateLimits = rateLimit();
+    // const rateLimits = rateLimit();
 
-    const { success, limit, remaining } = await rateLimits.limit(userId);
+    // const { success, limit, remaining } = await rateLimits.limit(userId);
 
-    if (!success) {
-      logger.error("User exceeded rate limit", { user: userId });
-      return res.status(429).json({
-        error: "Rate Limit Exceeded",
-        limit: limit,
-        remaining: remaining,
-        reset: new Date(Date.now() + 60000),
-      });
-    }
+    // if (!success) {
+    //   logger.error("User exceeded rate limit", { user: userId });
+    //   return res.status(429).json({
+    //     error: "Rate Limit Exceeded",
+    //     limit: limit,
+    //     remaining: remaining,
+    //     reset: new Date(Date.now() + 60000),
+    //   });
+    // }
 
     console.log(req.body);
 
@@ -152,18 +152,18 @@ router.get("/filters", async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const rateLimits = rateLimit();
+    // const rateLimits = rateLimit();
 
-    const { success, limit, remaining } = await rateLimits.limit(userId);
+    // const { success, limit, remaining } = await rateLimits.limit(userId);
 
-    if (!success) {
-      return res.status(429).json({
-        error: "Rate Limit Exceeded",
-        limit: limit,
-        remaining: remaining,
-        reset: new Date(Date.now() + 600000),
-      });
-    }
+    // if (!success) {
+    //   return res.status(429).json({
+    //     error: "Rate Limit Exceeded",
+    //     limit: limit,
+    //     remaining: remaining,
+    //     reset: new Date(Date.now() + 600000),
+    //   });
+    // }
 
     const { text, category, month, year } = req.query;
 
